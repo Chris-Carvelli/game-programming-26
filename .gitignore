@@ -1,0 +1,12 @@
+out*
+build
+.vs
+.vscode
+.idea
+
+CMakeSettings.json
+CMakeCache.txt
+imgui.ini
+build.sh
+
+*swp
