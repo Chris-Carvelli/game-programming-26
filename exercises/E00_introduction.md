@@ -6,7 +6,7 @@ This exercise will be very short by design. Take the time to
 2. check that you can run everything in the `examples` folder
 3. enjoy what's left of the summer
 
-![live_coding_result](../media/e00_0.png)
+![e00](../media/e00_0.png)
 
 ## References
 This reposiroty is aready setup with a CMake project and all the instruction needed to run what you need.
@@ -20,8 +20,8 @@ A couple of useful API documentation links
 	- https://wiki.libsdl.org/SDL3/CategoryTimer
 	- https://wiki.libsdl.org/SDL3/CategoryRect
 
-## 00.0 Hello SDL (Live Coding)
-We will be togheter a simple interactive application with SDL, from scratch. We will focus on the basics:
+## 00.0 Hello SDL (Code Review)
+We will be analyzing togheter a simple interactive application with SDL. We will focus on the basics:
 - main loop
 - logging and timing
 - displaying a window
@@ -29,7 +29,7 @@ We will be togheter a simple interactive application with SDL, from scratch. We 
 - placeholder rendering
 
 ## 00.1 Controlling a player
-Starting from the live-coded example, move the "player" on the screen using the APIs showcased during the lab:
+Starting from the given code, move the "player" on the screen using the APIs showcased during the lab:
 - read input/output from the WASD and move the "player" around
 - depending how you implemented the movement, it could be very smooth and noce or jagged and unnatural. Think back the structure of the main loop and the input polling, how can you ensure smooth player movement?
 
