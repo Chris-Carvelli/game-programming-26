@@ -1,3 +1,4 @@
+#include "SDL3/SDL_video.h"
 #include <SDL3/SDL.h>
 
 int main(int argc, char* argv[])
@@ -7,13 +8,14 @@ int main(int argc, char* argv[])
 	int target_framerate_ms = 1000 / 60;       // 16 milliseconds
 	int target_framerate_ns = 1000000000 / 60; // 16666666 nanoseconds
 
-	SDL_Window* window = SDL_CreateWindow("E00 - introduction", window_w, window_h, 0);
+	SDL_Window* window = SDL_CreateWindow("E00 - introduction", window_w, window_h, );
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
+
 
 	// increase the zoom to make debug text more legible
 	// (ie, on the class projector, we will usually use 2)
 	{
-		float zoom = 1;
+		float zoom = 2;
 		window_w /= zoom;
 		window_h /= zoom;
 		SDL_SetRenderScale(renderer, zoom, zoom);
@@ -71,6 +73,7 @@ int main(int argc, char* argv[])
 		SDL_RenderFillRect(renderer, &player_rect);
 
 		SDL_GetCurrentTime(&walltime_work_end);
+		SDL_Log("%lu, %lu\n", walltime_work_end, walltime_frame_beg);
 		time_elapsed_work = walltime_work_end - walltime_frame_beg;
 
 		if(target_framerate_ns > time_elapsed_work)
@@ -153,7 +156,15 @@ int main(int argc, char* argv[])
 		// render
 		SDL_RenderPresent(renderer);
 		
-		walltime_frame_beg = walltime_frame_end;
+		// NOTE: while taking the time two different times is no ideal, in the current setup we have a problem:
+		//       our `time_elapsed_frame` doesn't take into account the time it takes to render the debug view, AND
+		//       to "present" the graphics. Usually that is not a big deal, but if if the untimed stuff takes too long
+		//       we end up in a death spiral! Our options are:
+		//       - take the time again after everything has been done (which means the time logged will be slightly lower)
+		//       - show the elapsed time from the previous frame
+		//       we will go with the first option here
+		// walltime_frame_beg = walltime_frame_end;
+		SDL_GetCurrentTime(&walltime_frame_beg);
 	}
 
 	// NOTE: we created a bunch of resources (window, renderer). Should we explicitely destroy them here?
