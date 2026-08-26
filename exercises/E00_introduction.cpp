@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 	int target_framerate_ms = 1000 / 60;       // 16 milliseconds
 	int target_framerate_ns = 1000000000 / 60; // 16666666 nanoseconds
 
-	SDL_Window* window = SDL_CreateWindow("E00 - introduction", window_w, window_h, );
+	SDL_Window* window = SDL_CreateWindow("E00 - introduction", window_w, window_h, 0);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
 
 
