@@ -27,6 +27,9 @@ int main(int argc, char* argv[])
 	SDL_Time time_elapsed_frame;
 	SDL_Time time_elapsed_work;
 
+	SDL_Time time_elapsed_sleep;
+	SDL_Time time_elapsed_busywait;
+
 	int delay_type = 0;
 
 	float player_size = 40;
@@ -77,9 +80,12 @@ int main(int argc, char* argv[])
 				case 0:
 				{
 					// busy wait - very precise, but costly
-					SDL_Time walltime_busywait = walltime_work_end;
-					while(walltime_busywait - walltime_frame_beg < target_framerate_ns)
-						SDL_GetCurrentTime(&walltime_busywait);
+					walltime_frame_end = walltime_work_end;
+					while(walltime_frame_end - walltime_frame_beg < target_framerate_ns)
+						SDL_GetCurrentTime(&walltime_frame_end);
+
+					time_elapsed_busywait = walltime_frame_end - walltime_work_end;
+					time_elapsed_sleep = 0;
 					break;
 				}
 				case 1:
@@ -87,40 +93,61 @@ int main(int argc, char* argv[])
 					// simple delay - too imprecise
 					// NOTE: `SDL_Delay` gets milliseconds, but our timer gives us nanoseconds! We need to covert it manually
 					SDL_Delay((target_framerate_ns - time_elapsed_work) / 1000000);
+					SDL_GetCurrentTime(&walltime_frame_end);
+
+					time_elapsed_busywait = 0;
+					time_elapsed_sleep = walltime_frame_end - walltime_frame_beg;
 					break;
 				}
 				case 2:
 				{
 					// delay ns - also too imprecise
 					SDL_DelayNS(target_framerate_ns - time_elapsed_work);
+					SDL_GetCurrentTime(&walltime_frame_end);
+
+					time_elapsed_busywait = 0;
+					time_elapsed_sleep = walltime_frame_end - walltime_frame_beg;
 					break;
 				}
 				case 3:
 				{
 					// delay precise
 					SDL_DelayPrecise(target_framerate_ns - time_elapsed_work);
+					SDL_GetCurrentTime(&walltime_frame_end);
+
+					time_elapsed_busywait = 0;
+					time_elapsed_sleep = walltime_frame_end - walltime_frame_beg;
 					break;
 				}
 				case 4:
 				{
 					// custom delay - we use the sleeping delay with an arbitrary margin, then we busywait what's left
-					SDL_DelayNS(target_framerate_ns - time_elapsed_work - 1000000);
-					SDL_Time walltime_busywait = walltime_work_end;
+					const Uint64 sleep_safety_margin = 1000000; // ie, 1ms
+					SDL_Time walltime_sleep_end;
+					
+					SDL_DelayNS(target_framerate_ns - time_elapsed_work - sleep_safety_margin);
+					SDL_GetCurrentTime(&walltime_sleep_end);
+					walltime_frame_end = walltime_sleep_end;
 
-					while(walltime_busywait - walltime_frame_beg < target_framerate_ns)
-						SDL_GetCurrentTime(&walltime_busywait);
+					while(walltime_frame_end - walltime_frame_beg < target_framerate_ns)
+						SDL_GetCurrentTime(&walltime_frame_end);
+
+					time_elapsed_busywait = walltime_frame_end - walltime_sleep_end;
+					time_elapsed_sleep = walltime_sleep_end - walltime_work_end;
 					break;
 				}
 			}
 		}
 
-		SDL_GetCurrentTime(&walltime_frame_end);
 		time_elapsed_frame = walltime_frame_end - walltime_frame_beg;
 
 		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderDebugTextFormat(renderer, 10.0f, 10.0f, "elapsed (frame): %9.6f ms", (float)time_elapsed_frame/(float)1000000);
 		SDL_RenderDebugTextFormat(renderer, 10.0f, 20.0f, "elapsed(work   : %9.6f ms", (float)time_elapsed_work/(float)1000000);
 		SDL_RenderDebugTextFormat(renderer, 10.0f, 30.0f, "delay type: %d (change with 1-5)", delay_type + 1);
+
+		SDL_RenderDebugTextFormat(renderer, 10.0f, 50.0f, "time spent sleeping   : %9.6f ms", (float)time_elapsed_sleep/(float)1000000);
+		SDL_RenderDebugTextFormat(renderer, 10.0f, 60.0f, "time spent busywaiting: %9.6f ms", (float)time_elapsed_busywait/(float)1000000);
 
 
 		// render
