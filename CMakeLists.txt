@@ -17,6 +17,7 @@ add_subdirectory(examples)
 add_subdirectory(playground)
 add_subdirectory(exercises)
 add_subdirectory(exercises_workplace)
+add_subdirectory(exercises_solutions)
 
 # ugly hack to avoid setting the working directory for VSCode (which works for debuggin only)
 file(CREATE_LINK ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/data SYMBOLIC)
