@@ -37,7 +37,6 @@ Starting from the live-coding example, turn it in an actual game
 	- wrapping (if the player would go outside the window borders, teleport it to the other side, pac-man style)
   - when the player hits an asteroid, restart the game
 
-## 01.2 
 ## 01.2 Asteroids (optional)
 Slightly change the mechanics of the game to turn it in the classic Asteroids
   - left and right rotate, back and forward move (check the `SDL_RenderTextureRotated` API in order to render the player appropriately)

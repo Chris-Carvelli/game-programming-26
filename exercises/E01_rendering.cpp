@@ -1,3 +1,4 @@
+#include "SDL3/SDL_init.h"
 #define STB_IMAGE_IMPLEMENTATION
 
 #define ENABLE_DIAGNOSTICS
@@ -183,6 +184,8 @@ int main(void)
 		walltime_frame_beg = walltime_frame_end;
 	}
 
+	SDL_Quit();
+	
 	return 0;
 };
 
