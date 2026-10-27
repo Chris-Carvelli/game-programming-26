@@ -1,0 +1,54 @@
+{
+    "keybindings":
+    {
+        "keyboard": [[ 119, 0 ], [ 97, 2 ], [ 115, 1 ], [ 100, 3 ], [ 32, 6 ]],
+        "mouse": [[ 1, 4 ]]
+    },
+    "textures":
+    [
+        {
+            "id": 0,
+            "path": "data/kenney/simpleSpace_tilesheet_2.png",
+            "scalemode": 1
+        }
+    ],
+    "objects":
+    [
+        {
+            "id": 1,
+            "parent_id": 0,
+            "name": "player",
+            "children": [],
+            "components":
+            [
+                {
+                    "type": -1,
+                    "position": [ 0, 0 ],
+                    "rotation": 0,
+                    "scale": [ 1, 1 ]
+                },
+                {
+                    "type": -2,
+                    "tex_id": 0,
+                    "position": [ 0, 0 ],
+                    "size": [ 128, 128 ]
+                },
+                {
+                    "type": 1,
+                    "speed_mov": 7.5,
+                    "speed_rot": 3
+                },
+                {
+                    "type": 2,
+                    "tex_id": 0,
+                    "sprite_position": [ 896, 384 ],
+                    "sprite_size": [ 128, 128 ],
+                    "pool_size": 64,
+                    "speed": 10,
+                    "cooldown_secs": 0.1,
+                    "alive_secs": 3
+                }
+            ]
+        }
+    ]
+}

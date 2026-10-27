@@ -12,7 +12,6 @@ foreach(file_src ${file_src_list})
 	target_link_libraries(${targetname} PRIVATE $<TARGET_NAME_IF_EXISTS:SDL3_mixer::SDL3_mixer>)
 	target_link_libraries(${targetname} PRIVATE $<TARGET_NAME_IF_EXISTS:SDL3_ttf::SDL3_ttf>)
 	target_link_libraries(${targetname} PRIVATE $<TARGET_NAME_IF_EXISTS:box2d::box2d>)
-	target_link_libraries(${targetname} PRIVATE $<TARGET_NAME_IF_EXISTS:assimp::assimp>)
 
 	# add extra include paths that we will need along the course
 	# (not all dependencies are compiled, so those we need to look for explicitely)
