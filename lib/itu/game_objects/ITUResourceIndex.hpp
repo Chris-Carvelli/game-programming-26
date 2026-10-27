@@ -58,7 +58,7 @@ private:
 
     ResourceIndexId procedurally_create_id_last = 0;
     EngineContext* context;
-    stbds_hm(ResourceIndexId, T) hm_resources;
+    stbds_hm(ResourceIndexId, T) hm_resources = NULL;
 };
 
 template<typename T>
