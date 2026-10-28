@@ -26,6 +26,8 @@ public:
     bool ParentSet(ITUGameObjectId new_parent_id);
     const char* DebugNameGet();
 
+    const std::vector<ITUGameObjectId>& Children();
+
 private:
     void Init(const rapidjson::Value& config);
     void Update(float delta);

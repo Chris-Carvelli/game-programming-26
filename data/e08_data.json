@@ -1,0 +1,18 @@
+{
+    "keybindings":
+    {
+        "keyboard": [[ 119, 0 ], [ 97, 2 ], [ 115, 1 ], [ 100, 3 ], [ 32, 6 ]],
+        "mouse": [[ 1, 4 ]]
+    },
+    "models":
+    [
+        {
+            "id": 0,
+            "path": "/home/chris/dev/clr_monorepo/crystal/res/craft_cargoA.obj"
+        }
+    ],
+    "objects":
+    [
+
+    ]
+}

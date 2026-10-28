@@ -144,3 +144,8 @@ const char* ITUGameObject::DebugNameGet()
 {
     return name;
 }
+
+const std::vector<ITUGameObjectId>& ITUGameObject::Children()
+{
+    return children;
+}

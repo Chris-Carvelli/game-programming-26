@@ -1,0 +1,22 @@
+{
+    "keybindings":
+    {
+        "keyboard": [[ 119, 0 ], [ 97, 2 ], [ 115, 1 ], [ 100, 3 ], [ 32, 6 ]],
+        "mouse": [[ 1, 4 ]]
+    },
+    "objects":
+    [
+{
+            "id": 1,
+            "parent_id": 0,
+            "name": "player",
+            "children": [],
+            "components":
+            [
+                {
+                    "type": -3
+                }
+            ]
+        }
+    ]
+}

@@ -14,26 +14,26 @@ SDL_Texture* ResourceIndex<SDL_Texture*>::DoLoad_Impl(const char* path)
     return itu_resources_texture_create(context, path, scale_mode);
 }
 
-// template<>
-// RawTextureData ResourceIndex<RawTextureData>::DoLoad_Impl(const char* path)
-// {
-//     // TODO pass extra data to loader (channels_requested)
-//     const int channels_requested = 4;
-//     SDL_Log("DoLoad_Impl::Model3D: %s", path);
-//     RawTextureData texture;
-//     texture.data = itu_resources_texture_load_raw(
-//         path,
-//         channels_requested,
-//         &texture.width,
-//         &texture.height,
-//         &texture.channels
-//     );
-//     return texture;
-// }
+template<>
+RawTextureData ResourceIndex<RawTextureData>::DoLoad_Impl(const char* path)
+{
+    // TODO pass extra data to loader (channels_requested)
+    const int channels_requested = 4;
+    SDL_Log("DoLoad_Impl::RawTextureData: %s", path);
+    RawTextureData texture;
+    texture.data = itu_resources_texture_load_raw(
+        path,
+        channels_requested,
+        &texture.width,
+        &texture.height,
+        &texture.channels
+    );
+    return texture;
+}
 
-// template<>
-// Model3D* ResourceIndex<Model3D*>::DoLoad_Impl(const char* path)
-// {
-//     SDL_Log("DoLoad_Impl::Model3D: %s", path);
-//     return itu_sys_render3d_load_model3d(context->ctx_rendering, path);
-// }
+template<>
+Model3D* ResourceIndex<Model3D*>::DoLoad_Impl(const char* path)
+{
+    SDL_Log("DoLoad_Impl::Model3D: %s", path);
+    return itu_sys_render3d_load_model3d(context->ctx_rendering, path);
+}

@@ -57,9 +57,16 @@
 
 // context libraries (slightly higher-level functionality)
 #include <itu_lib_context.hpp>
+#ifdef ITU_SYS_RENDER_3D_IMPLEMENTATION
+	#define TINYOBJ_LOADER_C_IMPLEMENTATION
+	#include <tinyobj_loader.h>
+	#include <itu_sys_render3d.hpp>
+#endif
 #include <utils/itu_utils_box2d.hpp>
 #include <itu_lib_render2d.hpp>
 #include <itu_lib_imgui.hpp>
+
+
 
 // NOTE: some static code analysis will throw an error here mentioning "file cannot be included
 //       recursively", or something similar. This is not a real error that will happen when we
@@ -70,6 +77,9 @@
 	#include <itu_lib_context.cpp>
 	#include <utils/itu_utils_box2d.cpp>
 	#include <itu_lib_render2d.cpp>
+	#ifdef ITU_SYS_RENDER_3D_IMPLEMENTATION
+		#include <itu_sys_render3d.cpp>
+	#endif
 	#include <itu_lib_imgui.cpp>
 #endif // IN_IDE
 

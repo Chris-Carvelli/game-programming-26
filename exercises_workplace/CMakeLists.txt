@@ -21,4 +21,6 @@ foreach(file_src ${file_src_list})
 	target_include_directories(${targetname} PRIVATE ${CMAKE_SOURCE_DIR}/lib/imgui)
 	target_include_directories(${targetname} PRIVATE ${CMAKE_SOURCE_DIR}/lib/glm/include)
 	target_include_directories(${targetname} PRIVATE ${CMAKE_SOURCE_DIR}/lib/rapidjson)
+	target_include_directories(${targetname} PRIVATE ${CMAKE_SOURCE_DIR}/lib/tinyobj)
+
 endforeach()

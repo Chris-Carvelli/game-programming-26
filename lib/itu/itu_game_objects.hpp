@@ -13,6 +13,7 @@
 #include <game_objects/components/ITUComponentTransform2D.hpp>
 #include <game_objects/components/ITUComponentTransform3D.hpp>
 #include <game_objects/components/ITUComponentSprite.hpp>
+#include <game_objects/components/ITUComponentModel3D.hpp>
 
 
 #ifndef IN_IDE
@@ -24,5 +25,7 @@
     #include <game_objects/components/ITUComponentTransform2D.cpp>
     #include <game_objects/components/ITUComponentTransform3D.cpp>
     #include <game_objects/components/ITUComponentSprite.cpp>
+    #include <game_objects/components/ITUComponentModel3D.cpp>
+
 #endif // IN_IDE
 #endif // ITU_GAME_OBJECTS_HPP
