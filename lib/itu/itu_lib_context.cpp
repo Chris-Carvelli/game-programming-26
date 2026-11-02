@@ -245,8 +245,8 @@ void itu_lib_input_set_mapping_mouse(EngineContext* context, Uint8 key, BtnType 
 void itu_lib_input_clear(EngineContext* context)
 {
 	context->mouse_scroll = 0;
-	//context->mouse_delta.x = 0;
-	//context->mouse_delta.y = 0;
+	context->mouse_delta.x = 0;
+	context->mouse_delta.y = 0;
 
 	for(int i = 0; i < BTN_TYPE_MAX; ++i)
 		context->btn_isjustpressed[i] = false;

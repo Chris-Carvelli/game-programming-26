@@ -16,7 +16,8 @@ struct RawTextureData
 	void* data;
 	int width;
 	int height;
-	int channels;
+	int channels_actual;
+	int channels_requested;
 };
 
 // TMP end ====================================

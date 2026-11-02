@@ -1,9 +1,9 @@
 #include <itu_engine.hpp>
-
+// TMP
+// TODO move ResourceInde to main include
 #include <itu_game_objects.hpp>
 
 #ifndef ITU_UNITY_BUILD
-#include <itu_sys_renderer3d.hpp>
 #include <tinyobj_loader.h>
 #endif // ITU_UNITY_BUILD
 
@@ -92,7 +92,6 @@ void itu_sys_render3d_init(EngineContext* context)
     SDL_assert(context->renderer == NULL);
 
     context->ctx_rendering = (ITU_Renderer3D*)SDL_malloc(sizeof(ITU_Renderer3D));
-    SDL_memset(context->ctx_rendering, 0, sizeof(ITU_Renderer3D));
     ITU_Renderer3D* ctx_rendering = context->ctx_rendering;
     memset(ctx_rendering, 0, sizeof(ITU_Renderer3D));
 
@@ -103,7 +102,9 @@ void itu_sys_render3d_init(EngineContext* context)
 
     // create temporary material
     {
-        ResourceIndexId tex_id = ResourceIndex<RawTextureData>::Load("data/kenney/meshes/Textures/colormap.png");
+        // ITU_IdRawTexture id_tex = itu_sys_rstorage_raw_texture_load(context, "data/kenney/meshes/Textures/colormap.png");
+        // RawTextureData* tex_data = itu_sys_rstorage_raw_texture_get_ptr(id_tex);
+        ResourceIndexId tex_id = ResourceIndex<RawTextureData>::Load("/home/chris/dev/ITU/game-programming-dev/data/kenney/meshes/Textures/colormap.png");
         RawTextureData tex_data;
         ResourceIndex<RawTextureData>::Get(tex_id, tex_data);
         ctx_rendering->TMP_material_phong.shader_base_vert = shader_load(ctx_rendering, "data/shader/phong.vert.spv", SDL_GPU_SHADERSTAGE_VERTEX  , 1, 0);
@@ -168,8 +169,7 @@ void itu_sys_render3d_init(EngineContext* context)
         // TODO this DEFINITELY needs to happen as little as possible
         RawTextureData tex_data;
         SDL_assert(ResourceIndex<RawTextureData>::Get(ctx_rendering->TMP_material_phong.tex_albedo_id, tex_data));
-        // RawTextureData* tex_data = ResourceIndex<(ctx_rendering->TMP_material_phong.tex_albedo_data);
-        int texture_data_size = tex_data.width * tex_data.height * tex_data.channels;
+        int texture_data_size = tex_data.width * tex_data.height * tex_data.channels_requested;
         SDL_memcpy(ctx_rendering->mapping_data_texture, tex_data.data, texture_data_size);
 
         SDL_GPUTextureTransferInfo transfer_texture_location = { };
@@ -224,6 +224,37 @@ void TMP_tinyibj_file_loader(void* ctx, const char* filename, int is_mtl, const 
     *(char**)ctx = *buf;
 }
 
+Sint64 TMP_is_unique(VertexData* vertex_new, VertexData* vertices_analyzed, Uint32 vertices_analyzed_count)
+{
+    for(Sint64 i = 0; i < vertices_analyzed_count; ++i)
+        if(
+            fabsf(vertex_new->position.x   - vertices_analyzed[i].position.x)   < FLOAT_EPSILON &&
+            fabsf(vertex_new->position.y   - vertices_analyzed[i].position.y)   < FLOAT_EPSILON &&
+            fabsf(vertex_new->position.z   - vertices_analyzed[i].position.z)   < FLOAT_EPSILON &&
+            fabsf(vertex_new->normal.x    - vertices_analyzed[i].normal.x)    < FLOAT_EPSILON &&
+            fabsf(vertex_new->normal.y    - vertices_analyzed[i].normal.y)    < FLOAT_EPSILON &&
+            fabsf(vertex_new->normal.z    - vertices_analyzed[i].normal.z)    < FLOAT_EPSILON &&
+            fabsf(vertex_new->uv.x - vertices_analyzed[i].uv.x) < FLOAT_EPSILON &&
+            fabsf(vertex_new->uv.y - vertices_analyzed[i].uv.y) < FLOAT_EPSILON
+        )
+            return i;
+    return -1;
+}
+
+Uint64 hash_vertex(VertexData& data, float precision)
+{
+    Uint64 buffer[8];
+    buffer[0] = std::floor((double)data.position.x / (double)precision);
+    buffer[1] = std::floor((double)data.position.y / (double)precision);
+    buffer[2] = std::floor((double)data.position.z / (double)precision);
+    buffer[3] = std::floor((double)data.normal.x   / (double)precision);
+    buffer[4] = std::floor((double)data.normal.y   / (double)precision);
+    buffer[5] = std::floor((double)data.normal.z   / (double)precision);
+    buffer[6] = std::floor((double)data.uv.x       / (double)precision);
+    buffer[7] = std::floor((double)data.uv.y       / (double)precision);
+    return stbds_hash_bytes(buffer, sizeof(Uint64)* 8, 424242);
+}
+
 Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char* path)
 {
     tinyobj_attrib_t attrib;
@@ -235,7 +266,7 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
     char* tinyobj_buffer;
     SDL_assert(tinyobj_parse_obj(&attrib, &shapes, (size_t*)&shapesCount, &materials, (size_t*)&materialsCount, path, TMP_tinyibj_file_loader, &tinyobj_buffer, 0) == TINYOBJ_SUCCESS);
 
-    SDL_LogVerbose(0, "shapes: %lu\n materials: %lu\nfaces:  %d\n vertices: %d", shapesCount, materialsCount, attrib.num_faces, attrib.num_vertices);
+    SDL_Log("shapes: %lu\n materials: %lu\nfaces:  %d\n vertices: %d", shapesCount, materialsCount, attrib.num_faces, attrib.num_vertices);
 
     char size[10] = { 0 };
     size_t mesh_size_vertex_data_max = attrib.num_faces * sizeof(VertexData);
@@ -243,7 +274,7 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
     size_t mesh_size_indices     = attrib.num_faces * sizeof(Uint32);
     size_t mesh_size_data = mesh_size_indices + mesh_size_vertex_data_max;
     size_t mesh_size_tot = sizeof(Model3D) + mesh_size_data;
-    SDL_LogVerbose(0, "mesh size: %s", size);
+    SDL_Log("mesh size: %s", size);
 
     // NOTE we could zero-out only the header since the vertex and index data will be overwritten below
     Model3D* mesh_new = (Model3D*)malloc(mesh_size_tot);
@@ -252,6 +283,8 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
     mesh_new->indices = pointer_offset(Uint32, mesh_new, sizeof(Model3D));
     mesh_new->vertices = pointer_offset(VertexData, mesh_new->indices, mesh_size_indices);
 
+    Uint64* serialization_buffer = (Uint64*)malloc(sizeof(Uint64)*mesh_size_indices);
+    const float PRECISION = 0.0001f;
     // deduplicate vertices
     {
         typedef struct
@@ -276,28 +309,53 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
             new_vertex.normal.z   = attrib.normals  [nor_idx * 3 + 2];
             new_vertex.uv.x       = attrib.texcoords[tex_idx * 2 + 0];
             new_vertex.uv.y       = 1.0f - attrib.texcoords[tex_idx * 2 + 1];
-            Uint64 hash = stbds_hash_bytes(&new_vertex, sizeof(VertexData), 424242);
-            Uint64 index = stbds_hmgeti(hm, hash);
-            if(index == -1)
+
+            #define DEDUPLICATION
+            #ifdef DEDUPLICATION
+            // deduplication
             {
-               stbds_hmput(hm, hash, new_vertex);
-               index = stbds_hmgeti(hm, hash);
+                Uint64 hash = hash_vertex(new_vertex, FLOAT_EPSILON);
+                Uint64 index = stbds_hmgeti(hm, hash);
+                if(index == -1)
+                {
+                   stbds_hmput(hm, hash, new_vertex);
+                   index = stbds_hmgeti(hm, hash);
+                }
+                mesh_new->indices[i] = index;
             }
-            mesh_new->indices[i] = index;
+            #else
+            // no deduplication
+            {
+                mesh_new->indices[i] = i;
+                mesh_new->vertices[i] = new_vertex;
+            }
+            #endif
         }
 
-        mesh_new->vertices_count = stbds_hmlen(hm);
+        SDL_free(serialization_buffer);
 
-        for (Uint32 i = 0; i < mesh_new->vertices_count; ++i)
-            mesh_new->vertices[i] = hm[i].value;
+        #ifdef DEDUPLICATION
+        // deduplication
+        {
+            mesh_new->vertices_count = stbds_hmlen(hm);
 
-        // shirk vertx data array to fit de-duplicated
-        mesh_size_vertex_data_actual = mesh_new->vertices_count * sizeof(VertexData);
-        size_t mesh_size_actual = sizeof(Model3D) + mesh_size_indices + mesh_size_vertex_data_actual;
-        mesh_new = (Model3D*)SDL_realloc(mesh_new, mesh_size_actual);
-        stbds_hmfree(hm);
+            for (Uint32 i = 0; i < mesh_new->vertices_count; ++i)
+                mesh_new->vertices[i] = hm[i].value;
+
+            // shirk vertx data array to fit de-duplicated
+            mesh_size_vertex_data_actual = mesh_new->vertices_count * sizeof(VertexData);
+            size_t mesh_size_actual = sizeof(Model3D) + mesh_size_indices + mesh_size_vertex_data_actual;
+            mesh_new = (Model3D*)SDL_realloc(mesh_new, mesh_size_actual);
+            stbds_hmfree(hm);
+        }
+        #else
+        // no deduplication
+        {
+            mesh_new->vertices_count = attrib.num_faces;
+            mesh_size_vertex_data_actual = mesh_new->vertices_count * sizeof(VertexData);
+        }
+        #endif
     }
-
 
     // TMP check duplicates
     {
@@ -305,14 +363,14 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
         for (Uint32 i = 0; i < mesh_new->vertices_count; ++i)
             for (Uint32 j = i + 1; j < mesh_new->vertices_count; ++j)
                 if(
-                    fabsf(mesh_new->vertices[i].position.x - mesh_new->vertices[j].position.x) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].position.y - mesh_new->vertices[j].position.y) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].position.z - mesh_new->vertices[j].position.z) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].normal.x - mesh_new->vertices[j].normal.x) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].normal.y - mesh_new->vertices[j].normal.y) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].normal.z - mesh_new->vertices[j].normal.z) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].uv.x - mesh_new->vertices[j].uv.x) < FLOAT_EPSILON &&
-                    fabsf(mesh_new->vertices[i].uv.y - mesh_new->vertices[j].uv.y) < FLOAT_EPSILON
+                    fabsf(mesh_new->vertices[i].position.x - mesh_new->vertices[j].position.x) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].position.y - mesh_new->vertices[j].position.y) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].position.z - mesh_new->vertices[j].position.z) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].normal.x - mesh_new->vertices[j].normal.x) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].normal.y - mesh_new->vertices[j].normal.y) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].normal.z - mesh_new->vertices[j].normal.z) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].uv.x - mesh_new->vertices[j].uv.x) < PRECISION &&
+                    fabsf(mesh_new->vertices[i].uv.y - mesh_new->vertices[j].uv.y) < PRECISION
                 )
                 {
                     SDL_LogError(0, "duplicate: %d<>%d", i, j);

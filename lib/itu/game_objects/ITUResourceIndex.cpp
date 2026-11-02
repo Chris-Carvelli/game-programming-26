@@ -26,8 +26,9 @@ RawTextureData ResourceIndex<RawTextureData>::DoLoad_Impl(const char* path)
         channels_requested,
         &texture.width,
         &texture.height,
-        &texture.channels
+        &texture.channels_actual
     );
+    texture.channels_requested = channels_requested;
     return texture;
 }
 
