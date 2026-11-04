@@ -1,0 +1,57 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct UBO_Frame
+{
+    float4x4 camera_view;
+    float4x4 camera_projection;
+    float3 camera_position;
+    float4 light_direction;
+    float4 light_color;
+    float4 light_ambient_color;
+    float time;
+    float k_ambient;
+    float k_diffuse;
+    float k_specular;
+    float exp_specular;
+};
+
+struct main0_out
+{
+    float3 fragPosition [[user(locn0)]];
+    float3 fragNormal [[user(locn1)]];
+    float2 fragTexCoord [[user(locn2)]];
+    float4 gl_Position [[position]];
+};
+
+struct main0_in
+{
+    float3 inPosition [[attribute(0)]];
+    float3 inNormal [[attribute(1)]];
+    float2 inTexCoord [[attribute(2)]];
+    float4 inGlobalTransform_0 [[attribute(3)]];
+    float4 inGlobalTransform_1 [[attribute(4)]];
+    float4 inGlobalTransform_2 [[attribute(5)]];
+    float4 inGlobalTransform_3 [[attribute(6)]];
+};
+
+vertex main0_out main0(main0_in in [[stage_in]], constant UBO_Frame& data_frame [[buffer(0)]])
+{
+    main0_out out = {};
+    float4x4 inGlobalTransform = {};
+    inGlobalTransform[0] = in.inGlobalTransform_0;
+    inGlobalTransform[1] = in.inGlobalTransform_1;
+    inGlobalTransform[2] = in.inGlobalTransform_2;
+    inGlobalTransform[3] = in.inGlobalTransform_3;
+    float4 world_pos = inGlobalTransform * float4(in.inPosition, 1.0);
+    float4 world_normal = inGlobalTransform * float4(in.inNormal, 0.0);
+    out.gl_Position = (data_frame.camera_projection * data_frame.camera_view) * world_pos;
+    out.fragPosition = world_pos.xyz;
+    out.fragNormal = world_normal.xyz;
+    out.fragTexCoord = in.inTexCoord;
+    out.gl_Position.y = -(out.gl_Position.y);    // Invert Y-axis for Metal
+    return out;
+}
+

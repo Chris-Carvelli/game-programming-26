@@ -1,6 +1,4 @@
 #include <itu_engine.hpp>
-// TMP
-// TODO move ResourceInde to main include
 #include <itu_game_objects.hpp>
 
 #ifndef ITU_UNITY_BUILD
@@ -12,11 +10,19 @@
 
 struct Renderer3DBackendData
 {
-    const char*         name;
-    SDL_GPUShaderFormat shader_format;
+    const char*          name;
+    const char*          entry_point;
+    // FIXME quick hack to get renderer to work on metal
+    // TODO query supported formats
+    SDL_GPUTextureFormat depth_stencil_format;
+    SDL_GPUShaderFormat  shader_format;
 };
-static const Renderer3DBackendData backend_vk  = { "vulkan", SDL_GPU_SHADERFORMAT_SPIRV    };
-static const Renderer3DBackendData backend_mtl = { "metal" , SDL_GPU_SHADERFORMAT_METALLIB };
+
+#ifdef __APPLE__
+static const Renderer3DBackendData backend = { "metal" , "main0", SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_MSL };
+#else
+static const Renderer3DBackendData backend = { "vulkan", "main" , SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_SPIRV    };
+#endif
 
 struct ITU_Material
 {
@@ -90,7 +96,7 @@ struct ITU_Renderer3D
 
 // private functions
 void acquare_basic_resources(ITU_Renderer3D* ctx_rendering, SDL_Window* window, vec2f window_size);
-SDL_GPUShader* shader_load(ITU_Renderer3D* ctx_rendering, const char* path, SDL_GPUShaderStage stage, int num_uniform_buffers, int num_samples);
+SDL_GPUShader* shader_load(ITU_Renderer3D* ctx_rendering, const char* path, SDL_GPUShaderStage stage, int num_uniform_buffers, int num_samples, SDL_GPUShaderFormat format);
 SDL_GPUTexture* gpu_itu_resources_texture_create(SDL_GPUDevice* device, int w, int h, int channels, SDL_GPUTextureUsageFlags usage, SDL_GPUTextureFormat format);
 void create_persistent_buffer(ITU_Renderer3D* ctx_rendering, SDL_GPUTransferBuffer* buffer_transfer, Uint32 size, SDL_GPUBuffer** out_buffer, Uint8** out_memory);
 
@@ -105,24 +111,22 @@ void itu_sys_render3d_init(EngineContext* context)
 
     // try to use vulkan
     // TODO test on mac, need to be sure that it will fallback to metal if needed!
-    #ifdef __APPLE__
-    const Renderer3DBackendData* backend = &backend_mtl;
-    #else
-    const Renderer3DBackendData* backend = &backend_vk;
-    #endif
-    ctx_rendering->device = SDL_CreateGPUDevice(backend->shader_format, true, backend->name);
+    ctx_rendering->device = SDL_CreateGPUDevice(backend.shader_format, true, backend.name);
     SDL_ClaimWindowForGPUDevice(ctx_rendering->device, context->window);
 
     // create temporary material
     {
-        // ITU_IdRawTexture id_tex = itu_sys_rstorage_raw_texture_load(context, "data/kenney/meshes/Textures/colormap.png");
-        // RawTextureData* tex_data = itu_sys_rstorage_raw_texture_get_ptr(id_tex);
-        ResourceIndexId tex_id = ResourceIndex<RawTextureData>::Load("/home/chris/dev/ITU/game-programming-dev/data/kenney/meshes/Textures/colormap.png");
+        ResourceIndexId tex_id = ResourceIndex<RawTextureData>::Load("data/kenney/meshes/Textures/colormap.png");
         RawTextureData tex_data;
         ResourceIndex<RawTextureData>::Get(tex_id, tex_data);
-        ctx_rendering->TMP_material_phong.shader_base_vert = shader_load(ctx_rendering, "data/shader/phong.vert.spv", SDL_GPU_SHADERSTAGE_VERTEX  , 1, 0);
-        ctx_rendering->TMP_material_phong.shader_base_frag = shader_load(ctx_rendering, "data/shader/phong.frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        const char* err;
+        ctx_rendering->TMP_material_phong.shader_base_vert = shader_load(ctx_rendering, "data/shader/phong.vert.msl", SDL_GPU_SHADERSTAGE_VERTEX  , 1, 0, backend.shader_format);
+        err = SDL_GetError();
+        SDL_Log("(metal) error vertex shader: %s", err);
+        ctx_rendering->TMP_material_phong.shader_base_frag = shader_load(ctx_rendering, "data/shader/phong.frag.msl", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1, backend.shader_format);
+        SDL_Log("(metal) error vertex shader: %s", err);
         ctx_rendering->TMP_material_phong.tex_albedo = gpu_itu_resources_texture_create(ctx_rendering->device, tex_data.width, tex_data.height, 4, SDL_GPU_TEXTUREUSAGE_SAMPLER, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM);
+        SDL_Log("(metal) error tex albedo.  : %s", err);
         ctx_rendering->TMP_material_phong.tex_albedo_id = tex_id;
         ctx_rendering->TMP_material_phong.texture_bindings.texture = ctx_rendering->TMP_material_phong.tex_albedo;
         {
@@ -742,7 +746,7 @@ void acquare_basic_resources(ITU_Renderer3D* ctx_rendering, SDL_Window* window, 
         window_size.y,
         1,
         SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
-        SDL_GPU_TEXTUREFORMAT_D24_UNORM
+        backend.depth_stencil_format
     );
 
     SDL_GPUColorTargetDescription color_target_descriptions = { };
@@ -769,7 +773,7 @@ void acquare_basic_resources(ITU_Renderer3D* ctx_rendering, SDL_Window* window, 
     pipeline_def.target_info = { 0 };
     pipeline_def.target_info.color_target_descriptions = &color_target_descriptions;
     pipeline_def.target_info.num_color_targets = 1;
-    pipeline_def.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM;
+    pipeline_def.target_info.depth_stencil_format = backend.depth_stencil_format;
     pipeline_def.target_info.has_depth_stencil_target = true;
 
     ctx_rendering->pipeline = SDL_CreateGPUGraphicsPipeline(ctx_rendering->device, &pipeline_def);
@@ -792,15 +796,15 @@ void acquare_basic_resources(ITU_Renderer3D* ctx_rendering, SDL_Window* window, 
 
 }
 
-SDL_GPUShader* shader_load(ITU_Renderer3D* ctx_rendering, const char* path, SDL_GPUShaderStage stage, int num_uniform_buffers, int num_samplers)
+SDL_GPUShader* shader_load(ITU_Renderer3D* ctx_rendering, const char* path, SDL_GPUShaderStage stage, int num_uniform_buffers, int num_samplers, SDL_GPUShaderFormat format)
 {
     size_t shader_code_vert_size;
     void* shader_code_vert = SDL_LoadFile(path, &shader_code_vert_size);
     SDL_GPUShaderCreateInfo shader_base_def = { };
     shader_base_def.code = (Uint8*)shader_code_vert;
     shader_base_def.code_size = shader_code_vert_size;
-    shader_base_def.entrypoint = "main";
-    shader_base_def.format = SDL_GPU_SHADERFORMAT_SPIRV;
+    shader_base_def.entrypoint = "main0";
+    shader_base_def.format = format;
     shader_base_def.stage = stage;
     shader_base_def.num_uniform_buffers = num_uniform_buffers;
     shader_base_def.num_samplers = num_samplers;
