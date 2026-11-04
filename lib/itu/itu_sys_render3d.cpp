@@ -11,6 +11,7 @@
 struct Renderer3DBackendData
 {
     const char*          name;
+    const char*          shader_extension;
     const char*          entry_point;
     // FIXME quick hack to get renderer to work on metal
     // TODO query supported formats
@@ -19,9 +20,9 @@ struct Renderer3DBackendData
 };
 
 #ifdef __APPLE__
-static const Renderer3DBackendData backend = { "metal" , "main0", SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_MSL };
+static const Renderer3DBackendData backend = { "metal" , ".msl", "main0", SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_MSL };
 #else
-static const Renderer3DBackendData backend = { "vulkan", "main" , SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_SPIRV    };
+static const Renderer3DBackendData backend = { "vulkan", ".spv", "main" , SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_SHADERFORMAT_SPIRV    };
 #endif
 
 struct ITU_Material
@@ -119,14 +120,9 @@ void itu_sys_render3d_init(EngineContext* context)
         ResourceIndexId tex_id = ResourceIndex<RawTextureData>::Load("data/kenney/meshes/Textures/colormap.png");
         RawTextureData tex_data;
         ResourceIndex<RawTextureData>::Get(tex_id, tex_data);
-        const char* err;
-        ctx_rendering->TMP_material_phong.shader_base_vert = shader_load(ctx_rendering, "data/shader/phong.vert.msl", SDL_GPU_SHADERSTAGE_VERTEX  , 1, 0, backend.shader_format);
-        err = SDL_GetError();
-        SDL_Log("(metal) error vertex shader: %s", err);
-        ctx_rendering->TMP_material_phong.shader_base_frag = shader_load(ctx_rendering, "data/shader/phong.frag.msl", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1, backend.shader_format);
-        SDL_Log("(metal) error vertex shader: %s", err);
+        ctx_rendering->TMP_material_phong.shader_base_vert = shader_load(ctx_rendering, "data/shader/phong.vert", SDL_GPU_SHADERSTAGE_VERTEX  , 1, 0, backend.shader_format);
+        ctx_rendering->TMP_material_phong.shader_base_frag = shader_load(ctx_rendering, "data/shader/phong.frag", SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1, backend.shader_format);
         ctx_rendering->TMP_material_phong.tex_albedo = gpu_itu_resources_texture_create(ctx_rendering->device, tex_data.width, tex_data.height, 4, SDL_GPU_TEXTUREUSAGE_SAMPLER, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM);
-        SDL_Log("(metal) error tex albedo.  : %s", err);
         ctx_rendering->TMP_material_phong.tex_albedo_id = tex_id;
         ctx_rendering->TMP_material_phong.texture_bindings.texture = ctx_rendering->TMP_material_phong.tex_albedo;
         {
@@ -798,12 +794,21 @@ void acquare_basic_resources(ITU_Renderer3D* ctx_rendering, SDL_Window* window, 
 
 SDL_GPUShader* shader_load(ITU_Renderer3D* ctx_rendering, const char* path, SDL_GPUShaderStage stage, int num_uniform_buffers, int num_samplers, SDL_GPUShaderFormat format)
 {
+    // FIXME temporary handling of shaders with different extensions
+    const size_t BUF_PATH_SIZE = 256;
+    char buf_path[BUF_PATH_SIZE];
+    size_t len_path = SDL_strlen(path);
+    size_t len_ext  = SDL_strlen(backend.shader_extension);
+    SDL_assert(len_path + len_ext < BUF_PATH_SIZE-1);
+    SDL_strlcpy(buf_path, path, BUF_PATH_SIZE);
+    SDL_strlcat(buf_path, backend.shader_extension, BUF_PATH_SIZE);
+
     size_t shader_code_vert_size;
-    void* shader_code_vert = SDL_LoadFile(path, &shader_code_vert_size);
+    void* shader_code_vert = SDL_LoadFile(buf_path, &shader_code_vert_size);
     SDL_GPUShaderCreateInfo shader_base_def = { };
     shader_base_def.code = (Uint8*)shader_code_vert;
     shader_base_def.code_size = shader_code_vert_size;
-    shader_base_def.entrypoint = "main0";
+    shader_base_def.entrypoint = backend.entry_point;
     shader_base_def.format = format;
     shader_base_def.stage = stage;
     shader_base_def.num_uniform_buffers = num_uniform_buffers;

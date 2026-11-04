@@ -21,9 +21,6 @@ inline bool itu_load_json(const char* path, rapidjson::Document& d)
 
 inline void itu_lib_input_set_mappings(EngineContext* context, rapidjson::Value& config)
 {
-    rapidjson::Value& keyboard = config["keyboard"];
-    rapidjson::Value& mouse = config["mouse"];
-
     if(config.HasMember("keyboard"))
         for(rapidjson::Value& binding : config["keyboard"].GetArray())
         {
