@@ -10,6 +10,14 @@
 #define UNIFORM_SLOT_GLOBAL   0
 #define UNIFORM_SLOT_MATERIAL 1
 
+struct Renderer3DBackendData
+{
+    const char*         name;
+    SDL_GPUShaderFormat shader_format;
+};
+static const Renderer3DBackendData backend_vk  = { "vulkan", SDL_GPU_SHADERFORMAT_SPIRV    };
+static const Renderer3DBackendData backend_mtl = { "metal" , SDL_GPU_SHADERFORMAT_METALLIB };
+
 struct ITU_Material
 {
     SDL_GPUShader* shader_base_vert;
@@ -97,7 +105,12 @@ void itu_sys_render3d_init(EngineContext* context)
 
     // try to use vulkan
     // TODO test on mac, need to be sure that it will fallback to metal if needed!
-    ctx_rendering->device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
+    #ifdef __APPLE__
+    const Renderer3DBackendData* backend = &backend_mtl;
+    #else
+    const Renderer3DBackendData* backend = &backend_vk;
+    #endif
+    ctx_rendering->device = SDL_CreateGPUDevice(backend->shader_format, true, backend->name);
     SDL_ClaimWindowForGPUDevice(ctx_rendering->device, context->window);
 
     // create temporary material

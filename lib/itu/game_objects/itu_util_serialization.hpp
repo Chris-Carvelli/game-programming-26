@@ -23,19 +23,22 @@ inline void itu_lib_input_set_mappings(EngineContext* context, rapidjson::Value&
 {
     rapidjson::Value& keyboard = config["keyboard"];
     rapidjson::Value& mouse = config["mouse"];
-    for(rapidjson::Value& binding : keyboard.GetArray())
-    {
-        int k = binding.GetArray()[0].GetUint();
-        int b = binding.GetArray()[1].GetInt();
-        itu_lib_input_set_mapping_keyboard(context, k, (BtnType)b);
-    }
 
-    for(rapidjson::Value& binding : mouse.GetArray())
-    {
-        int k = binding.GetArray()[0].GetUint();
-        int b = binding.GetArray()[1].GetInt();
-        itu_lib_input_set_mapping_mouse(context, k, (BtnType)b);
-    }
+    if(config.HasMember("keyboard"))
+        for(rapidjson::Value& binding : config["keyboard"].GetArray())
+        {
+            int k = binding.GetArray()[0].GetUint();
+            int b = binding.GetArray()[1].GetInt();
+            itu_lib_input_set_mapping_keyboard(context, k, (BtnType)b);
+        }
+
+    if(config.HasMember("mouse"))
+        for(rapidjson::Value& binding : config["mouse"].GetArray())
+        {
+            int k = binding.GetArray()[0].GetUint();
+            int b = binding.GetArray()[1].GetInt();
+            itu_lib_input_set_mapping_mouse(context, k, (BtnType)b);
+        }
 }
 
 template<typename Writer>
