@@ -254,20 +254,6 @@ Sint64 TMP_is_unique(VertexData* vertex_new, VertexData* vertices_analyzed, Uint
     return -1;
 }
 
-Uint64 hash_vertex(VertexData& data, float precision)
-{
-    Uint64 buffer[8];
-    buffer[0] = std::floor((double)data.position.x / (double)precision);
-    buffer[1] = std::floor((double)data.position.y / (double)precision);
-    buffer[2] = std::floor((double)data.position.z / (double)precision);
-    buffer[3] = std::floor((double)data.normal.x   / (double)precision);
-    buffer[4] = std::floor((double)data.normal.y   / (double)precision);
-    buffer[5] = std::floor((double)data.normal.z   / (double)precision);
-    buffer[6] = std::floor((double)data.uv.x       / (double)precision);
-    buffer[7] = std::floor((double)data.uv.y       / (double)precision);
-    return stbds_hash_bytes(buffer, sizeof(Uint64)* 8, 424242);
-}
-
 Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char* path)
 {
     tinyobj_attrib_t attrib;
@@ -327,7 +313,8 @@ Model3D* itu_sys_render3d_load_model3d(ITU_Renderer3D* ctx_rendering, const char
             #ifdef DEDUPLICATION
             // deduplication
             {
-                Uint64 hash = hash_vertex(new_vertex, FLOAT_EPSILON);
+                Uint32 idxs[3] = { pos_idx, tex_idx, nor_idx };
+                Uint64 hash = stbds_hash_bytes(idxs, sizeof(idxs), 424242);
                 Uint64 index = stbds_hmgeti(hm, hash);
                 if(index == -1)
                 {
