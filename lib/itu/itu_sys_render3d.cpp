@@ -485,6 +485,13 @@ void itu_sys_render3d_set_camera_view(ITU_Renderer3D* ctx_rendering, glm::mat4 v
 void itu_sys_render3d_set_camera_proj(ITU_Renderer3D* ctx_rendering, glm::mat4 proj_matrix)
 {
     ctx_rendering->uniform_data_global.camera_projection = proj_matrix;
+    #if __APPLE__
+    // meta uses forward as positive Z-axis (rater than negative like glm)
+    // not very elegant to do it here, but at a quick glance SDL_GPURenderer dos not have a
+    // way to set the default coordinate frame?
+    ctx_rendering->uniform_data_global.camera_projection[2][2] *= -1;
+    ctx_rendering->uniform_data_global.camera_projection[2][3] *= -1;
+    #endif
 }
 
 void itu_sys_render3d_model3d_render(ITU_Renderer3D* ctx_rendering, Model3D* data, InstanceData instance)
