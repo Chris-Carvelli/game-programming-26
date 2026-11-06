@@ -1,0 +1,47 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct UBO_Frame
+{
+    float4x4 camera_view;
+    float4x4 camera_projection;
+    float3 camera_position;
+    float4 light_direction;
+    float4 light_color;
+    float4 light_ambient_color;
+    float time;
+    float k_ambient;
+    float k_diffuse;
+    float k_specular;
+    float exp_specular;
+};
+
+struct main0_out
+{
+    float4 outColor [[color(0)]];
+};
+
+struct main0_in
+{
+    float3 fragPosition [[user(locn0)]];
+    float3 fragNormal [[user(locn1)]];
+    float2 fragTexCoord [[user(locn2)]];
+};
+
+fragment main0_out main0(main0_in in [[stage_in]], constant UBO_Frame& data_frame [[buffer(0)]], texture2d<float> tex_albedo [[texture(0)]], sampler tex_albedoSmplr [[sampler(0)]])
+{
+    main0_out out = {};
+    float3 albedo = tex_albedo.sample(tex_albedoSmplr, in.fragTexCoord).xyz;
+    float3 V = fast::normalize(data_frame.camera_position - in.fragPosition);
+    float3 N = fast::normalize(in.fragNormal);
+    float3 L = fast::normalize(data_frame.light_direction.xyz);
+    float3 H = fast::normalize(L + V);
+    float3 final_color = (((albedo * data_frame.k_ambient) * data_frame.light_ambient_color.xyz) + ((albedo * data_frame.k_diffuse) * fast::max(dot(N, L), 0.0))) + float3(data_frame.k_specular * powr(fast::max(dot(N, H), 0.0), data_frame.exp_specular));
+    final_color = fast::clamp(final_color, float3(0.0), float3(1.0));
+    out.outColor = float4(final_color, 1.0);
+    out.outColor = float4(final_color, 1.0);
+    return out;
+}
+
